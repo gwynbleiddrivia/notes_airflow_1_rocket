@@ -1,8 +1,33 @@
-SO, in this code, I needed to import json, pathlib, requests and airflow. I don't know the purpose of importing the libs other than airflow yet.
+SO, in this code, I needed to import json, pathlib, requests and airflow. I don't know the purpose of importing the libs other than airflow yet. Also imported requests.exceptions as requests_exceptions.
 I have imported dag from airflow. dag is all cap though. It's DAG.
 I have imported two operators from airflow, bash and python. To run bash scripts and python scripts. The operators are BashOperator and PythonOperator. They were imported from airflow.operators.bash and airflow.operators.python
 Then I instantiated a dag object. It took three parameters. dag_id to give the whole dag a name. start_date to receive the date at which the dag should start running. It took data like this start_date = airflow.utils.date.days_ago(14). Third parameter was schedule_interval, set it to None.
 Then I applied BashOperator to download the URL response with curl command, And saved it to download_launches. The BashOperator class took three paramaters - task_id, bash_command, dag=dag. This dag has been instantiated earlier already. In the curl -L command, I added -o /tmp/launches.json. Maybe to save the json response in a temporary folder? idk
 One task in the DAG is done. It was the BashOperator
-Before moving on to the PythonOperator for the next task on the DAG, now I have to write a python function, my guess is - to parse the json appropriately.
+Before moving on to the PythonOperator for the next task on the DAG, now I have to write a python function _get_pictures() , my guess is - to parse the json appropriately.
 I can see that pathlib apparently only contributes to ensure if the directory /tmp/images exists. I have not created that directory in the code so far though. Why?
+I understand, the code for pathlib contains a mkdir class which actually creates that /tmp/images/ directory. The whole pathlib.Path("/tmp/images").mkdir takes two arguments, parents=True and exist_ok=True
+So, now I use with open "/tmp/launches.json" as f to read from that file. I will read the image_urls from there, so write down the necessary loops and list comprehension to do that
+This is the first time requests have been used to get the requests from every image_url. Naming each image as the last string after the last "/" in the url, I proceed
+Used string literal to rename wach file with the designed file name
+Used with open(target file, "wb") as f --- here "wb" stands for write binary mode... i.e. write binary data to a file. If the file does not exist, it will be created. If exists, contents will be truncated before opening... I don't fully understand that second phrase yet though, just copied from tgpt -_-
+Writing to the target file the main body of the response, all I had to do was f.write(response.content)
+Now two exception handing will be used. Firsts one is requests_exceptions.MissingSchema. The tgpt says that it is used to check if the url is missing the schema i.e. http:// or https:// the protocol part. I didn't know they were called schema though.
+The second one is requests_exceptions.ConnectionError. According to tgpt, it handles the connection error gracefully. At the same time, it "reties the requests, log the error, informs the user that request was failed due to network issue"
+Now that _get_pictures() function is finished, now is the time to get to the next task which is donw by PythonOperator. It takes in three arguments - task_id="get_pictures", python_callable=_get_pictures, dag=dag. There was no quote before and after the _get_pictures callable. It was weird, but requires attention.
+Now it's turn to write the third task in the DAG. It is notify. A BashOperator does that. In the same manner it takes three args, task_id="notify", bash_command= 'echo "There are now $(ls /tmp/images/ | wc -l) images."',dag=dag
+Here, I do not understand what wc -l means though. It certainly is not world cup. Besides, Why the double quote is inside the single quote. What if I do the reverse? Would it work? Have to check to understand truly.
+Now there is a line which also perplexes me, it directs the order of the execution of tasks.
+download_launches >> get_pictures >> notify
+My question is would this >> sign be recognized by python as it was used. I never saw this case, so I know nothing about this now.
+This whole python code is a DAG file which contains three tasks which will be executed one after other. Each will be executed when the last one is finished. I just know this much.
+
+Well, some new insights from the explanation from the book.
+#In the dag object definition, schedule_interval=None means the DAG will not run automatically. FOr now, it can be triggered from the Airflow UI.
+#The operators perform the actual work. Each operator performs a single unit of work.
+#The order of execution is actually called dependecies in Airflow. Operators can run independently though.
+# The >> operator is called rshift operator, it is used in Python to shift bits. But in case of Airflow, >> is used to define dependecies, the conventional definition is overridden here.
+# The bare minimum Airflow consists three core components: a scheduler, a webserver, a database
+# Now in the book, it is shown to run this in a Python env. Alternatively, running in a docker container is also shown. To learn this in a professional way, I am choosing the docker. I ahve to install a Docker Engine to in my machine, according to the book. I have vewry little idea about it though.
+
+Now.. running this is in the docker container..
