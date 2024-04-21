@@ -1,0 +1,8 @@
+SO, in this code, I needed to import json, pathlib, requests and airflow. I don't know the purpose of importing the libs other than airflow yet.
+I have imported dag from airflow. dag is all cap though. It's DAG.
+I have imported two operators from airflow, bash and python. To run bash scripts and python scripts. The operators are BashOperator and PythonOperator. They were imported from airflow.operators.bash and airflow.operators.python
+Then I instantiated a dag object. It took three parameters. dag_id to give the whole dag a name. start_date to receive the date at which the dag should start running. It took data like this start_date = airflow.utils.date.days_ago(14). Third parameter was schedule_interval, set it to None.
+Then I applied BashOperator to download the URL response with curl command, And saved it to download_launches. The BashOperator class took three paramaters - task_id, bash_command, dag=dag. This dag has been instantiated earlier already. In the curl -L command, I added -o /tmp/launches.json. Maybe to save the json response in a temporary folder? idk
+One task in the DAG is done. It was the BashOperator
+Before moving on to the PythonOperator for the next task on the DAG, now I have to write a python function, my guess is - to parse the json appropriately.
+I can see that pathlib apparently only contributes to ensure if the directory /tmp/images exists. I have not created that directory in the code so far though. Why?
