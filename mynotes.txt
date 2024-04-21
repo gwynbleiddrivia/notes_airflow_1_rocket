@@ -1,3 +1,4 @@
+21-04-2024
 SO, in this code, I needed to import json, pathlib, requests and airflow. I don't know the purpose of importing the libs other than airflow yet. Also imported requests.exceptions as requests_exceptions.
 I have imported dag from airflow. dag is all cap though. It's DAG.
 I have imported two operators from airflow, bash and python. To run bash scripts and python scripts. The operators are BashOperator and PythonOperator. They were imported from airflow.operators.bash and airflow.operators.python
@@ -30,4 +31,34 @@ Well, some new insights from the explanation from the book.
 # The bare minimum Airflow consists three core components: a scheduler, a webserver, a database
 # Now in the book, it is shown to run this in a Python env. Alternatively, running in a docker container is also shown. To learn this in a professional way, I am choosing the docker. I ahve to install a Docker Engine to in my machine, according to the book. I have vewry little idea about it though.
 
-Now.. running this is in the docker container..
+Now.. running this in the docker container..
+
+
+sudo docker run -ti -p 8080:8080 -v /home/serenity/MyNotebooks/dataengg/notes_airflow_1_rocket/download_rocket_launches.py:/opt/airflow/dags/download_rocket_launches.py --entrypoint=/bin/bash --name=airflow apache/airflow:2.0.0-python3.8 -c '(airflow users create --username admin --password admin --firstname Anonymous --lastname Admin --role Admin --email admin@example.org); airflow webserver & airflow scheduler'
+
+
+This monstrous command will be broken down bit by bit, but I am facing an error. 
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such table: dag and another error --- sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such table: job
+and a stupid warning -- WARNING - Exception when importing 'airflow.providers.microsoft.azure.hooks.wasb.WasbHook' from 'apache-airflow-providers-microsoft-azure' package: cannot import name 'BlobClient' from 'azure.storage.blob' (/home/airflow/.local/lib/python3.8/site-packages/azure/storage/blob/__init__.py)
+
+
+I have to solve this infuriating thing first.
+
+So far, this is 21st April's Journal.
+
+22-04-2024
+
+So, to initialize and upgrade airflow database, I have tried this new command ---
+
+sudo docker run -ti -p 8080:8080 -v /home/serenity/MyNotebooks/dataengg/notes_airflow_1_rocket/download_rocket_launches.py:/opt/airflow/dags/download_rocket_launches.py --entrypoint=/bin/bash --name=airflow apache/airflow:2.0.0-python3.8 -c '(airflow db init && airflow db upgrade); (airflow users create --username admin --password admin --firstname Anonymous --lastname Admin --role Admin --email admin@example.org); airflow webserver & airflow scheduler'
+
+That stupid blob warning persists and again and again every few times later, this kind of worker exiting notification happens --
+
+[2024-04-21 23:44:38 +0000] [41] [INFO] Handling signal: ttou
+[2024-04-21 23:44:38 +0000] [163] [INFO] Worker exiting (pid: 163)
+
+That pid being different numbers in each case. Still waiting for the process to finish though. The pid is increasing. A new noticification is saying to reset orphaned task for active dag. But that blob warning is filling my terminal lengthwise.
+
+Well, I didnt know that airflow is already running after my renewed command. It is in http://localhost:8080
+
+
